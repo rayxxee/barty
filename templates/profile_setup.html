@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2 style="text-align: center; margin-bottom: 2rem;">Complete Your Profile</h2>
+    <form method="POST" action="{{ url_for('profile_setup') }}">
+        <div class="form-group">
+            <label class="form-label" for="user_type">I am a:</label>
+            <select class="form-control" id="user_type" name="user_type" required>
+                <option value="">Select your role</option>
+                <option value="student">Student</option>
+                <option value="faculty">Faculty</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="cms_id">CMS ID</label>
+            <input type="text" class="form-control" id="cms_id" name="cms_id" maxlength="20">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="department">Department</label>
+            <input type="text" class="form-control" id="department" name="department" required maxlength="100">
+        </div>
+        <div class="form-group" id="year_group" style="display: none;">
+            <label class="form-label" for="year">Year</label>
+            <select class="form-control" id="year" name="year">
+                <option value="">Select year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Complete Profile</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('user_type').addEventListener('change', function() {
+    const yearGroup = document.getElementById('year_group');
+    if (this.value === 'student') {
+        yearGroup.style.display = 'block';
+        document.getElementById('year').required = true;
+    } else {
+        yearGroup.style.display = 'none';
+        document.getElementById('year').required = false;
+    }
+});
+</script>
+{% endblock %}

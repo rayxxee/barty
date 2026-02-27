@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="receiver-info">
+            {% if receiver.profile_image %}
+            <img src="{{ receiver.profile_image }}" alt="{{ receiver.username }}" class="receiver-avatar">
+            {% else %}
+            <div class="avatar-placeholder">{{ receiver.username[0]|upper }}</div>
+            {% endif %}
+            <h2>{{ receiver.username }}</h2>
+        </div>
+        <div class="item-info">
+            <span class="item-title">Item: {% if messages and messages[0].item_title %}{{ messages[0].item_title }}{% else %}New Chat{% endif %}</span>
+        </div>
+    </div>
+    
+    <div class="chat-messages" id="chat-messages">
+        {% for message in messages %}
+        <div class="message {% if message.sender_id == session.user_id %}sent{% else %}received{% endif %}">
+            {% if message.sender_id != session.user_id %}
+            <a href="{{ url_for('user_profile', user_id=message.sender_id) }}" class="profile-link">
+                {% if message.profile_image %}
+                <img src="{{ message.profile_image }}" alt="{{ message.username }}" class="message-avatar">
+                {% else %}
+                <div class="avatar-placeholder small">{{ message.username[0]|upper }}</div>
+                {% endif %}
+            </a>
+            {% endif %}
+            <div class="message-content">
+                <p>{{ message.message }}</p>
+                <span class="message-time">{{ message.sent_at.strftime('%H:%M') }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="chat-input">
+        <form id="message-form" class="message-form">
+            <input type="text" id="message-input" placeholder="Type your message..." maxlength="1000" required>
+            <button type="submit" class="send-button">Send</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const config = {
+        room: "{{ room }}",
+        itemId: {{ item_id }},
+        userId: {{ session.user_id }},
+        receiverId: {{ receiver.user_id }}
+    };
+    
+    console.log('Initializing chat with:', config);
+
+    const socket = io({
+        transports: ['websocket'],
+        upgrade: false,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+    });
+
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const messagesContainer = document.getElementById('chat-messages');
+    
+    socket.on('connect', () => {
+        console.log('Connected to server with ID:', socket.id);
+        socket.emit('join', {room: config.room});
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Disconnected from server');
+    });
+
+    socket.on('connect_error', (error) => {
+        console.error('Connection error:', error);
+        alert('Failed to connect to chat server. Please refresh the page.');
+    });
+    
+    socket.on('new_message', function(data) {
+        console.log('Received new message:', data);
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${data.sender_id == config.userId ? 'sent' : 'received'}`;
+        
+        if (data.sender_id != config.userId) {
+            const profileLink = document.createElement('a');
+            profileLink.href = `/user/${data.sender_id}`;
+            profileLink.className = 'profile-link';
+            
+            const avatar = document.createElement(data.profile_image ? 'img' : 'div');
+            if (data.profile_image) {
+                avatar.src = data.profile_image;
+                avatar.alt = data.sender;
+                avatar.className = 'message-avatar';
+            } else {
+                avatar.className = 'avatar-placeholder small';
+                avatar.textContent = data.sender[0].toUpperCase();
+            }
+            profileLink.appendChild(avatar);
+            messageDiv.appendChild(profileLink);
+        }
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        
+        const messageText = document.createElement('p');
+        messageText.textContent = data.message;
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'message-time';
+        timeSpan.textContent = new Date(data.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+        
+        messageContent.appendChild(messageText);
+        messageContent.appendChild(timeSpan);
+        messageDiv.appendChild(messageContent);
+        
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+    
+    socket.on('status', function(data) {
+        console.log('Status message:', data);
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'status-message';
+        statusDiv.textContent = data.msg;
+        messagesContainer.appendChild(statusDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+    
+    socket.on('error', function(data) {
+        console.error('Server error:', data);
+        alert(data.msg || 'An error occurred while sending the message');
+    });
+    
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) {
+            return;
+        }
+        
+        const messageData = {
+            room: config.room,
+            message: message,
+            receiver_id: config.receiverId,
+            item_id: config.itemId
+        };
+        
+        console.log('Sending message:', messageData);
+        
+        socket.emit('send_message', messageData, (response) => {
+            if (response && response.error) {
+                console.error('Message send error:', response.error);
+                alert('Failed to send message: ' + response.error);
+            } else {
+                console.log('Message sent successfully');
+                messageInput.value = '';
+            }
+        });
+    });
+    
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
+</script>
+
+<style>
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    background: white;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.chat-header {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.receiver-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.receiver-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.avatar-placeholder.small {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+}
+
+.item-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.message {
+    max-width: 90%;
+    min-width: 200px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.message.sent {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+    min-width: 200px;
+    max-width: 70%;
+}
+
+.message.received {
+    align-self: flex-start;
+    flex-direction: row;
+    min-width: 200px;
+    max-width: 90%;
+}
+
+.message-content {
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    position: relative;
+    padding-bottom: 1.5rem;
+    flex: 1;
+}
+
+.message.sent .message-content {
+    background: #007bff;
+    color: white;
+}
+
+.message p {
+    margin: 0;
+    word-wrap: break-word;
+}
+
+.message-time {
+    position: absolute;
+    bottom: 0.25rem;
+    right: 0.75rem;
+    color: #6c757d;
+    font-size: 0.7rem;
+}
+
+.message.sent .message-time {
+    color: rgba(255,255,255,0.8);
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+    order: -1;
+}
+
+.avatar-placeholder.small {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+    order: -1;
+}
+
+.profile-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.profile-link:hover {
+    opacity: 0.9;
+}
+
+.chat-input {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.message-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#message-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 1.5rem;
+    outline: none;
+}
+
+#message-input:focus {
+    border-color: #007bff;
+}
+
+.send-button {
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background: #0056b3;
+}
+
+.status-message {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+}
+</style>
+{% endblock %}

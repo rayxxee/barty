@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Initiate Trade - NUST Barter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Item You Want</h3>
+                <div class="card">
+                    <img src="{{ item.image_url }}" class="card-img-top" style="height: 300px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.title }}</h5>
+                        <p class="card-text">{{ item.description }}</p>
+                        <p><strong>Owner:</strong> {{ item.username }}</p>
+                        <p><strong>Desired Trade:</strong> {{ item.desired_trade }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h3>What You're Offering</h3>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="offered_title" class="form-label">Item Title</label>
+                        <input type="text" class="form-control" id="offered_title" name="offered_title" required maxlength="200">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="offered_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="offered_description" name="offered_description" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="offered_image" class="form-label">Item Image</label>
+                        <input type="file" class="form-control" id="offered_image" name="offered_image" accept="image/*" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message (Optional)</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" placeholder="Any additional information..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Send Trade Request</button>
+                    <a href="{{ url_for('product_view', item_id=item.item_id) }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

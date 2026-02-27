@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="user-info-section">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {% if user.profile_image %}
+                <img src="{{ user.profile_image }}" alt="{{ user.username }}">
+                {% else %}
+                <div class="avatar-placeholder">{{ user.username[0]|upper }}</div>
+                {% endif %}
+            </div>
+            <div class="profile-details">
+                <h1 class="username">{{ user.username }}</h1>
+                <p class="user-info">{{ user.department }}</p>
+                <p class="user-info">{{ user.user_type }} {% if user.year %}- Year {{ user.year }}{% endif %}</p>
+                <p class="credibility">Credibility Score: <span class="score">{{ user.credibility_score|round(1) }}★</span></p>
+            </div>
+            {% if user.user_id == session.user_id %}
+            <div class="profile-actions">
+                <a href="{{ url_for('settings') }}" class="btn-settings">Edit Profile</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation tabs -->
+    <div class="profile-tabs">
+        <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
+                    Items ({{ user_items|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="trades-tab" data-bs-toggle="tab" data-bs-target="#trades" type="button" role="tab">
+                    Completed Trades ({{ completed_trades|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ratings-tab" data-bs-toggle="tab" data-bs-target="#ratings" type="button" role="tab">
+                    Ratings ({{ user_ratings|length }})
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab content -->
+    <div class="tab-content" id="profileTabContent">
+        <!-- Items Tab -->
+        <div class="tab-pane fade show active" id="items" role="tabpanel">
+            {% if user_items %}
+                <div class="items-grid">
+                    {% for item in user_items %}
+                    <div class="item-card">
+                        <a href="{{ url_for('product_view', item_id=item.item_id) }}">
+                            {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="{{ item.title }}">
+                            {% else %}
+                            <div class="no-image">No Image</div>
+                            {% endif %}
+                            <div class="item-details">
+                                <h3>{{ item.title }}</h3>
+                                <p>{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</p>
+                                <p class="desired-trade">Wants: {{ item.desired_trade }}</p>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-box-open fa-3x"></i>
+                    <h3>No items listed yet</h3>
+                    {% if user.user_id == session.user_id %}
+                    <a href="{{ url_for('product_upload') }}" class="btn-primary">List an item</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Completed Trades Tab -->
+        <div class="tab-pane fade" id="trades" role="tabpanel">
+            {% if completed_trades %}
+                <div class="trades-grid">
+                    {% for trade in completed_trades %}
+                    <div class="trade-card">
+                        <div class="trade-header">
+                            <span class="trade-type badge {{ 'bg-success' if trade.trade_type == 'received' else 'bg-primary' }}">
+                                {{ 'Received' if trade.trade_type == 'received' else 'Sent' }}
+                            </span>
+                            <small class="text-muted">{{ trade.created_at.strftime('%d-%m-%Y') }}</small>
+                        </div>
+                        <div class="trade-content">
+                            <h5>{{ trade.item_title }}</h5>
+                            <p><strong>Offered:</strong> {{ trade.offered_item_title }}</p>
+                            {% if user.user_id == session.user_id and 'other_user_name' in trade %}
+                            <p><strong>{{ 'From' if trade.trade_type == 'received' else 'To' }}:</strong> {{ trade.other_user_name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-handshake fa-3x"></i>
+                    <h3>No completed trades yet</h3>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Ratings Tab -->
+        <div class="tab-pane fade" id="ratings" role="tabpanel">
+            {% if user_ratings %}
+                <div class="ratings-grid">
+                    {% for rating in user_ratings %}
+                    <div class="rating-card">
+                        <div class="rating-header">
+                            <div class="rater-info">
+                                {% if rating.rater_image %}
+                                <img src="{{ rating.rater_image }}" alt="{{ rating.rater_username }}" class="rater-avatar">
+                                {% else %}
+                                <div class="avatar-placeholder small">{{ rating.rater_username[0]|upper }}</div>
+                                {% endif %}
+                                <span class="rater-name">{{ rating.rater_username }}</span>
+                            </div>
+                            <div class="rating-stars">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= rating.rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                    <i class="far fa-star text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="rating-value">({{ rating.rating }})</span>
+                            </div>
+                        </div>
+                        {% if rating.comment %}
+                        <div class="rating-comment">
+                            <p>"{{ rating.comment }}"</p>
+                        </div>
+                        {% endif %}
+                        <div class="rating-date">
+                            <small class="text-muted">{{ rating.created_at.strftime('%d-%m-%Y') }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-star fa-3x"></i>
+                    <h3>No ratings yet</h3>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.user-info-section {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.avatar-placeholder.small {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    border-radius: 50%;
+}
+
+.profile-details {
+    flex: 1;
+}
+
+.username {
+    margin: 0;
+    font-size: 2rem;
+    color: #212529;
+}
+
+.user-info {
+    margin: 0.5rem 0;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.credibility {
+    font-size: 1.2rem;
+    color: #495057;
+}
+
+.score {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.profile-actions {
+    margin-left: auto;
+}
+
+.btn-settings {
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.btn-settings:hover {
+    background: #0056b3;
+}
+
+.profile-tabs {
+    margin-bottom: 2rem;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+    background: #007bff;
+    color: white;
+    border-radius: 6px 6px 0 0;
+}
+
+.items-grid, .trades-grid, .ratings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.item-card, .trade-card, .rating-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.item-card:hover, .trade-card:hover, .rating-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.item-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.no-image {
+    height: 200px;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.item-details, .trade-content, .rating-content {
+    padding: 1rem;
+}
+
+.item-details h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #212529;
+}
+
+.desired-trade {
+    color: #007bff;
+    font-weight: 500;
+    margin: 0;
+}
+
+.trade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.trade-content {
+    padding: 1rem;
+}
+
+.trade-content h5 {
+    margin: 0 0 0.5rem 0;
+    color: #212529;
+}
+
+.rating-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+}
+
+.rater-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rater-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.rating-stars {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rating-value {
+    margin-left: 0.5rem;
+    font-weight: bold;
+}
+
+.rating-comment {
+    padding: 0 1rem;
+    font-style: italic;
+}
+
+.rating-date {
+    padding: 0 1rem 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+.empty-state h3 {
+    margin-bottom: 1rem;
+}
+
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .items-grid, .trades-grid, .ratings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-container {
+        padding: 0 1rem;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

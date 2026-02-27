@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="trade-requests-header">
+        <h2 class="trade-requests-title">
+            <i class="fas fa-handshake"></i>
+            Trade Requests
+        </h2>
+        <p class="trade-requests-subtitle">Manage your incoming and outgoing trade requests</p>
+    </div>
+
+    <div class="row">
+        <!-- Incoming Requests -->
+        <div class="col-lg-6">
+            <div class="requests-section">
+                <h3 class="section-title">
+                    <i class="fas fa-inbox"></i>
+                    Incoming Requests
+                    <span class="badge bg-primary">{{ incoming_requests|length }}</span>
+                </h3>
+                
+                {% if incoming_requests %}
+                    <div class="requests-list">
+                        {% for request in incoming_requests %}
+                            <div class="request-card">
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        {% if request.offered_item_image %}
+                                            <img src="{{ request.offered_item_image }}" class="request-image" alt="Offered item">
+                                        {% else %}
+                                            <div class="no-image-placeholder">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="request-content">
+                                            <div class="request-header">
+                                                <div class="user-info">
+                                                    {% if request.sender_image %}
+                                                        <img src="{{ request.sender_image }}" class="user-avatar" alt="{{ request.sender_username }}">
+                                                    {% else %}
+                                                        <div class="user-avatar-placeholder">{{ request.sender_username[0]|upper }}</div>
+                                                    {% endif %}
+                                                    <span class="username">{{ request.sender_username }}</span>
+                                                </div>
+                                                <span class="status-badge status-{{ request.status }}">
+                                                    {{ request.status.title() }}
+                                                </span>
+                                            </div>
+                                            
+                                            <h5 class="offered-title">{{ request.offered_item_title }}</h5>
+                                            <p class="offered-description">{{ request.offered_item_description[:80] }}{% if request.offered_item_description|length > 80 %}...{% endif %}</p>
+                                            <p class="requested-item">For: <strong>{{ request.requested_item_title }}</strong></p>
+                                            
+                                            {% if request.message %}
+                                                <p class="trade-message">
+                                                    <i class="fas fa-quote-left"></i>
+                                                    {{ request.message[:60] }}{% if request.message|length > 60 %}...{% endif %}
+                                                </p>
+                                            {% endif %}
+                                            
+                                            <div class="request-actions">
+                                                {% if request.status == 'pending' %}
+                                                    <a href="{{ url_for('respond_trade', request_id=request.request_id, action='accept') }}" 
+                                                       class="btn btn-success btn-sm" onclick="return confirm('Accept this trade request?')">
+                                                        <i class="fas fa-check"></i> Accept
+                                                    </a>
+                                                    <a href="{{ url_for('respond_trade', request_id=request.request_id, action='decline') }}" 
+                                                       class="btn btn-danger btn-sm" onclick="return confirm('Decline this trade request?')">
+                                                        <i class="fas fa-times"></i> Decline
+                                                    </a>
+                                                {% elif request.status == 'accepted' %}
+                                                    <a href="{{ url_for('complete_trade', request_id=request.request_id) }}" 
+                                                       class="btn btn-primary btn-sm" onclick="return confirm('Mark this trade as completed?')">
+                                                        <i class="fas fa-handshake"></i> Complete Trade
+                                                    </a>
+                                                    <small class="text-muted d-block mt-1">Waiting for both parties to confirm completion</small>
+                                                {% elif request.status == 'completed' %}
+                                                    <a href="{{ url_for('rate_trade', request_id=request.request_id) }}" 
+                                                       class="btn btn-info btn-sm">
+                                                        <i class="fas fa-star"></i> Rate Trade
+                                                    </a>
+                                                    <span class="text-success"><i class="fas fa-check-circle"></i> Trade Completed</span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="request-footer">
+                                                <small class="text-muted">{{ request.created_at.strftime('%d-%m-%Y %H:%M') }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox fa-3x"></i>
+                        <h5>No incoming requests</h5>
+                        <p class="text-muted">You haven't received any trade requests yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Outgoing Requests -->
+        <div class="col-lg-6">
+            <div class="requests-section">
+                <h3 class="section-title">
+                    <i class="fas fa-paper-plane"></i>
+                    Outgoing Requests
+                    <span class="badge bg-secondary">{{ outgoing_requests|length }}</span>
+                </h3>
+                
+                {% if outgoing_requests %}
+                    <div class="requests-list">
+                        {% for request in outgoing_requests %}
+                            <div class="request-card">
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        {% if request.offered_item_image %}
+                                            <img src="{{ request.offered_item_image }}" class="request-image" alt="Offered item">
+                                        {% else %}
+                                            <div class="no-image-placeholder">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="request-content">
+                                            <div class="request-header">
+                                                <div class="user-info">
+                                                    <span class="username">To: {{ request.receiver_username }}</span>
+                                                </div>
+                                                <span class="status-badge status-{{ request.status }}">
+                                                    {{ request.status.title() }}
+                                                </span>
+                                            </div>
+                                            
+                                            <h5 class="offered-title">{{ request.offered_item_title }}</h5>
+                                            <p class="offered-description">{{ request.offered_item_description[:80] }}{% if request.offered_item_description|length > 80 %}...{% endif %}</p>
+                                            <p class="requested-item">For: <strong>{{ request.requested_item_title }}</strong></p>
+                                            
+                                            {% if request.message %}
+                                                <p class="trade-message">
+                                                    <i class="fas fa-quote-left"></i>
+                                                    {{ request.message[:60] }}{% if request.message|length > 60 %}...{% endif %}
+                                                </p>
+                                            {% endif %}
+                                            
+                                            <div class="request-actions">
+                                                {% if request.status == 'pending' %}
+                                                    <span class="text-warning"><i class="fas fa-clock"></i> Waiting for response</span>
+                                                {% elif request.status == 'accepted' %}
+                                                    <a href="{{ url_for('complete_trade', request_id=request.request_id) }}" 
+                                                       class="btn btn-primary btn-sm" onclick="return confirm('Mark this trade as completed?')">
+                                                        <i class="fas fa-handshake"></i> Complete Trade
+                                                    </a>
+                                                    <small class="text-muted d-block mt-1">Waiting for both parties to confirm completion</small>
+                                                {% elif request.status == 'completed' %}
+                                                    <a href="{{ url_for('rate_trade', request_id=request.request_id) }}" 
+                                                       class="btn btn-info btn-sm">
+                                                        <i class="fas fa-star"></i> Rate Trade
+                                                    </a>
+                                                    <span class="text-success"><i class="fas fa-check-circle"></i> Trade Completed</span>
+                                                {% elif request.status == 'declined' %}
+                                                    <span class="text-danger"><i class="fas fa-times-circle"></i> Declined</span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="request-footer">
+                                                <small class="text-muted">{{ request.created_at.strftime('%d-%m-%Y %H:%M') }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-paper-plane fa-3x"></i>
+                        <h5>No outgoing requests</h5>
+                        <p class="text-muted">You haven't sent any trade requests yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.trade-requests-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.trade-requests-title {
+    font-size: 2.5rem;
+    color: #212529;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.trade-requests-title i {
+    color: #007bff;
+    margin-right: 0.5rem;
+}
+
+.trade-requests-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+.requests-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    height: fit-content;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.section-title i {
+    color: #007bff;
+    margin-right: 0.75rem;
+}
+
+.section-title .badge {
+    margin-left: auto;
+}
+
+.requests-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.request-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.request-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.request-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px 0 0 8px;
+}
+
+.no-image-placeholder {
+    width: 100%;
+    height: 120px;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    border-radius: 8px 0 0 8px;
+}
+
+.request-content {
+    padding: 1rem;
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 0.5rem;
+}
+
+.user-avatar-placeholder {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.username {
+    font-weight: 500;
+    color: #495057;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-accepted {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-completed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-declined {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.offered-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.offered-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.requested-item {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.trade-message {
+    background: #e3f2fd;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-style: italic;
+    color: #1976d2;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+.trade-message i {
+    margin-right: 0.5rem;
+}
+
+.request-actions {
+    margin-bottom: 0.75rem;
+}
+
+.request-actions .btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.request-footer {
+    padding-top: 0.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+.empty-state h5 {
+    margin-bottom: 0.75rem;
+    color: #495057;
+}
+
+@media (max-width: 768px) {
+    .trade-requests-title {
+        font-size: 2rem;
+    }
+    
+    .requests-section {
+        padding: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+    }
+    
+    .request-card .row {
+        --bs-gutter-x: 0;
+    }
+    
+    .request-image {
+        height: 100px;
+    }
+    
+    .no-image-placeholder {
+        height: 100px;
+    }
+}
+</style>
+{% endblock %} 

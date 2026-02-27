@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Trade Requests for "{{ item.title }}"</h2>
+        <a href="{{ url_for('product_view', item_id=item.item_id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Product
+        </a>
+    </div>
+    
+    {% if trade_requests %}
+        <div class="row">
+            {% for request in trade_requests %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                {% if request.offered_item_image %}
+                                    <img src="{{ request.offered_item_image }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="no-image-placeholder d-flex align-items-center justify-content-center" style="height: 200px; background: #f8f9fa;">
+                                        <i class="fas fa-image fa-3x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        {% if request.sender_image %}
+                                            <img src="{{ request.sender_image }}" class="rounded-circle me-2" width="30" height="30">
+                                        {% else %}
+                                            <div class="bg-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                <span class="text-white small">{{ request.sender_username[0]|upper }}</span>
+                                            </div>
+                                        {% endif %}
+                                        <strong>{{ request.sender_username }}</strong>
+                                        <span class="badge bg-info ms-auto">{{ request.credibility_score|round(1) if request.credibility_score else 0.0 }}★</span>
+                                    </div>
+                                    
+                                    <p class="text-muted small mb-2">
+                                        {{ request.department if request.department else 'No Department' }} - 
+                                        {{ request.user_type.title() if request.user_type else 'Unknown' }}
+                                    </p>
+                                    
+                                    <h6 class="card-title">{{ request.offered_item_title }}</h6>
+                                    <p class="card-text small">{{ request.offered_item_description[:100] }}{% if request.offered_item_description|length > 100 %}...{% endif %}</p>
+                                    
+                                    {% if request.message %}
+                                        <p class="text-muted small"><strong>Message:</strong> {{ request.message[:80] }}{% if request.message|length > 80 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge 
+                                            {% if request.status == 'pending' %}bg-warning
+                                            {% elif request.status == 'accepted' %}bg-success
+                                            {% elif request.status == 'declined' %}bg-danger
+                                            {% elif request.status == 'completed' %}bg-info
+                                            {% endif %}">
+                                            {{ request.status.title() }}
+                                        </span>
+                                        
+                                        <small class="text-muted">{{ request.created_at.strftime('%d-%m-%Y %H:%M') }}</small>
+                                    </div>
+                                    
+                                    {% if request.status == 'pending' %}
+                                        <div class="mt-3">
+                                            <a href="{{ url_for('respond_trade', request_id=request.request_id, action='accept') }}" 
+                                               class="btn btn-success btn-sm me-2" onclick="return confirm('Accept this trade request?')">
+                                                <i class="fas fa-check"></i> Accept
+                                            </a>
+                                            <a href="{{ url_for('respond_trade', request_id=request.request_id, action='decline') }}" 
+                                               class="btn btn-danger btn-sm" onclick="return confirm('Decline this trade request?')">
+                                                <i class="fas fa-times"></i> Decline
+                                            </a>
+                                        </div>
+                                    {% elif request.status == 'accepted' %}
+                                        <div class="mt-3">
+                                            <a href="{{ url_for('complete_trade', request_id=request.request_id) }}" 
+                                               class="btn btn-primary btn-sm" onclick="return confirm('Mark this trade as completed?')">
+                                                <i class="fas fa-handshake"></i> Complete Trade
+                                            </a>
+                                        </div>
+                                    {% elif request.status == 'completed' %}
+                                        <div class="mt-3">
+                                            <a href="{{ url_for('rate_trade', request_id=request.request_id) }}" 
+                                               class="btn btn-info btn-sm">
+                                                <i class="fas fa-star"></i> Rate Trade
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center mt-5">
+            <i class="fas fa-handshake fa-5x text-muted mb-3"></i>
+            <h4 class="text-muted">No Trade Requests Yet</h4>
+            <p class="text-muted">No one has made a trade request for this item yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

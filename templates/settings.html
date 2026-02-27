@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1 class="settings-title">
+            <i class="fas fa-cog"></i>
+            Account Settings
+        </h1>
+        <p class="settings-subtitle">Manage your profile and preferences</p>
+    </div>
+
+    <div class="settings-content">
+        <div class="row">
+            <!-- Profile Settings -->
+            <div class="col-lg-8">
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user"></i>
+                            Profile Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                                        <label>Username</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                                        <label>Email</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" name="department" class="form-control" id="department" 
+                                               value="{{ user.department if user.department else '' }}" maxlength="100" required>
+                                        <label for="department">Department</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <select name="year" class="form-select" id="year">
+                                            <option value="">Select Year</option>
+                                            <option value="1" {{ 'selected' if user.year == 1 }}>Year 1</option>
+                                            <option value="2" {{ 'selected' if user.year == 2 }}>Year 2</option>
+                                            <option value="3" {{ 'selected' if user.year == 3 }}>Year 3</option>
+                                            <option value="4" {{ 'selected' if user.year == 4 }}>Year 4</option>
+                                            <option value="5" {{ 'selected' if user.year == 5 }}>Year 5</option>
+                                        </select>
+                                        <label for="year">Academic Year</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" value="{{ user.user_type.title() if user.user_type else 'Not Set' }}" readonly>
+                                <label>User Type</label>
+                            </div>
+
+                            <div class="profile-image-section">
+                                <label class="form-label">Profile Picture</label>
+                                <div class="image-upload-area">
+                                    <div class="current-image">
+                                        {% if user.profile_image %}
+                                            <img src="{{ user.profile_image }}" alt="Current Profile" id="currentProfileImage">
+                                        {% else %}
+                                            <div class="no-image-placeholder" id="imagePlaceholder">
+                                                <i class="fas fa-user fa-3x"></i>
+                                                <p>No profile picture</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="image-upload-controls">
+                                        <input type="file" name="profile_image" class="form-control d-none" id="profileImage" accept="image/*">
+                                        <label for="profileImage" class="btn btn-outline-primary">
+                                            <i class="fas fa-camera"></i>
+                                            Choose New Picture
+                                        </label>
+                                        <small class="text-muted d-block mt-2">JPG, PNG, GIF up to 5MB</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Save Changes
+                                </button>
+                                <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Back to Profile
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="col-lg-4">
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-shield-alt"></i>
+                            Security
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('change_password') }}">
+                            <div class="form-floating mb-3">
+                                <input type="password" name="current_password" class="form-control" id="currentPassword" required>
+                                <label for="currentPassword">Current Password</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="password" name="new_password" class="form-control" id="newPassword" 
+                                       minlength="8" required>
+                                <label for="newPassword">New Password</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="password" name="confirm_password" class="form-control" id="confirmPassword" 
+                                       minlength="8" required>
+                                <label for="confirmPassword">Confirm New Password</label>
+                            </div>
+
+                            <div class="password-requirements">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    Password must be at least 8 characters long
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-key"></i>
+                                Change Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-star"></i>
+                            Account Stats
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-label">Credibility Score</span>
+                                <span class="stat-value">{{ user.credibility_score|round(1) if user.credibility_score else 5.0 }}★</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar text-info"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-label">Member Since</span>
+                                <span class="stat-value">{{ user.created_at.strftime('%b %Y') if user.created_at else 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.settings-title {
+    font-size: 2.5rem;
+    color: #212529;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.settings-title i {
+    color: #007bff;
+    margin-right: 0.5rem;
+}
+
+.settings-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+.settings-content {
+    margin-top: 2rem;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.card-header {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.card-title i {
+    color: #007bff;
+    margin-right: 0.75rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.form-control, .form-select {
+    border: 2px solid #dee2e6;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.profile-image-section {
+    margin-bottom: 2rem;
+}
+
+.image-upload-area {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+}
+
+.current-image {
+    flex-shrink: 0;
+}
+
+.current-image img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #dee2e6;
+}
+
+.no-image-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    border: 3px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.no-image-placeholder i {
+    margin-bottom: 0.25rem;
+}
+
+.no-image-placeholder p {
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.image-upload-controls {
+    flex: 1;
+}
+
+.password-requirements {
+    margin-bottom: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 1rem;
+    }
+    
+    .settings-title {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .image-upload-area {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+document.getElementById('profileImage').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const currentImage = document.getElementById('currentProfileImage');
+            const placeholder = document.getElementById('imagePlaceholder');
+            
+            if (currentImage) {
+                currentImage.src = e.target.result;
+            } else if (placeholder) {
+                placeholder.outerHTML = `<img src="${e.target.result}" alt="Profile Preview" id="currentProfileImage" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #dee2e6;">`;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Password confirmation validation
+document.getElementById('confirmPassword').addEventListener('input', function() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = this.value;
+    
+    if (newPassword !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %} 

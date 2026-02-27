@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rate Trade - NUST Barter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    
+    <div class="container mt-4">
+        <h2>Rate Trade</h2>
+        
+        {% if already_rated %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> You have already rated this trade.
+            </div>
+            <a href="{{ url_for('trade_requests') }}" class="btn btn-primary">Back to Trade Requests</a>
+        {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <h5>Trade Details</h5>
+                    <p><strong>Item:</strong> {{ trade.item_title }}</p>
+                    <p><strong>Your Offer:</strong> {{ trade.offered_item_title }}</p>
+                    <p><strong>Trading Partner:</strong> 
+                        {{ trade.receiver_name if trade.sender_id == session['user_id'] else trade.sender_name }}
+                    </p>
+                    
+                    <form method="POST" class="mt-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Rate User</h6>
+                                <div class="mb-3">
+                                    <label for="user_rating" class="form-label">Rating (1-5)</label>
+                                    <select class="form-control" id="user_rating" name="user_rating" required>
+                                        <option value="">Select rating</option>
+                                        <option value="1">1 - Poor</option>
+                                        <option value="2">2 - Fair</option>
+                                        <option value="3">3 - Good</option>
+                                        <option value="4">4 - Very Good</option>
+                                        <option value="5">5 - Excellent</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="user_comment" class="form-label">Comment</label>
+                                    <textarea class="form-control" id="user_comment" name="user_comment" rows="3"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6>Rate Product</h6>
+                                <div class="mb-3">
+                                    <label for="product_rating" class="form-label">Rating (1-5)</label>
+                                    <select class="form-control" id="product_rating" name="product_rating" required>
+                                        <option value="">Select rating</option>
+                                        <option value="1">1 - Poor</option>
+                                        <option value="2">2 - Fair</option>
+                                        <option value="3">3 - Good</option>
+                                        <option value="4">4 - Very Good</option>
+                                        <option value="5">5 - Excellent</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="product_comment" class="form-label">Comment</label>
+                                    <textarea class="form-control" id="product_comment" name="product_comment" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Submit Ratings</button>
+                        <a href="{{ url_for('trade_requests') }}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html> 

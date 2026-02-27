@@ -1,0 +1,6 @@
+Flask==3.0.2
+Flask-MySQLdb==2.0.0
+bcrypt==4.1.2
+mysqlclient==2.2.4
+Werkzeug==3.0.1
+python-dotenv==1.0.1

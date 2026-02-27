@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Email Verification</h2>
+    <p>Your email has been verified successfully!</p>
+    <p>Please <a href="{{ url_for('profile_setup') }}">complete your profile</a> to continue.</p>
+</div>
+{% endblock %}

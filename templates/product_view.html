@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="product-container">
+    <div class="product-image-section">
+        {% if item.image_url %}
+        <img src="{{ item.image_url }}" alt="{{ item.title }}" class="product-image">
+        {% else %}
+        <div class="no-image">No Image Available</div>
+        {% endif %}
+    </div>
+    
+    <div class="product-details">
+        <div class="product-header">
+            <h1 class="product-title">{{ item.title }}</h1>
+            {% if item.user_id == session.user_id %}
+            <div class="owner-buttons">
+                <a href="{{ url_for('product_trade_requests', item_id=item.item_id) }}" class="btn btn-info me-2">
+                    <i class="fas fa-handshake"></i> View Trade Requests
+                </a>
+                <form action="{{ url_for('remove_item', item_id=item.item_id) }}" method="POST" class="remove-form d-inline">
+                    <button type="submit" class="remove-button" onclick="return confirm('Are you sure you want to remove this item?')">Remove Item</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="seller-info">
+            <div class="seller-avatar">
+                {% if item.profile_image %}
+                <img src="{{ item.profile_image }}" alt="{{ item.username }}">
+                {% else %}
+                <div class="avatar-placeholder">{{ item.username[0]|upper }}</div>
+                {% endif %}
+            </div>
+            <div class="seller-details">
+                <h3 class="seller-name">{{ item.username }}</h3>
+                <p class="seller-info-text">{{ item.department }}</p>
+                <p class="seller-info-text">{{ item.user_type }} {% if item.year %}- Year {{ item.year }}{% endif %}</p>
+            </div>
+        </div>
+        
+        <div class="product-description">
+            <h2 class="section-title">Description</h2>
+            <p class="description-text">{{ item.description }}</p>
+        </div>
+        
+        <div class="desired-trade">
+            <h2 class="section-title">Desired Trade</h2>
+            <p class="trade-text">{{ item.desired_trade }}</p>
+        </div>
+        
+        {% if item.user_id != session.user_id %}
+        <div class="action-buttons">
+            <a href="{{ url_for('chat', user_id=item.user_id, item_id=item.item_id) }}" class="chat-button me-2">Chat with Seller</a>
+            {% if item.status == 'available' %}
+                <a href="{{ url_for('initiate_trade', item_id=item.item_id) }}" class="btn btn-success">
+                    <i class="fas fa-exchange-alt"></i> Initiate Trade
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.product-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+.product-image-section {
+    position: sticky;
+    top: 2rem;
+    width: 500px;
+    height: 500px;
+    flex-shrink: 0;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 1.4rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.product-title {
+    margin: 0;
+    font-size: 2.5rem;
+    color: #212529;
+    line-height: 1.2;
+}
+
+.owner-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.remove-button {
+    padding: 0.75rem 1.5rem;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.remove-button:hover {
+    background: #c82333;
+}
+
+.me-2 {
+    margin-right: 0.5rem;
+}
+
+.d-inline {
+    display: inline;
+}
+
+.seller-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.seller-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.seller-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.seller-details {
+    flex: 1;
+}
+
+.seller-name {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #212529;
+}
+
+.seller-info-text {
+    margin: 0.5rem 0;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.product-description, .desired-trade {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.section-title {
+    margin: 0 0 1rem 0;
+    color: #212529;
+    font-size: 1.4rem;
+}
+
+.description-text, .trade-text {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.action-buttons {
+    margin-top: auto;
+}
+
+.chat-button {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    transition: background-color 0.2s;
+}
+
+.chat-button:hover {
+    background: #0056b3;
+}
+
+@media (max-width: 1024px) {
+    .product-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .product-image-section {
+        position: static;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+    }
+
+    .product-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-container {
+        padding: 0 1rem;
+    }
+
+    .product-image-section {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+    }
+
+    .product-title {
+        font-size: 1.8rem;
+    }
+
+    .seller-avatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    .seller-name {
+        font-size: 1.3rem;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+    }
+
+    .description-text, .trade-text {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}
