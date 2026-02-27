@@ -11,8 +11,8 @@ import os
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file (with override=True to ensure hot-reloads pick up .env changes)
+load_dotenv(override=True)
 
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
@@ -66,19 +66,20 @@ with app.app_context():
         print(f"Database connection error: {e}")
 
 # Email Configuration
-EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
-EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')  # App Password
+def get_email_credentials():
+    return os.getenv('EMAIL_ADDRESS'), os.getenv('EMAIL_PASSWORD')
 
 def send_verification_email(email, token):
     try:
         msg = MIMEText(f'Click to verify: http://localhost:5000/verify_email/{token}')
         msg['Subject'] = 'Barty - Email Verification'
-        msg['From'] = EMAIL_ADDRESS
+        email_address, email_password = get_email_credentials()
+        msg['From'] = email_address
         msg['To'] = email
 
         # Updated SMTP configuration
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.login(email_address, email_password)
             server.send_message(msg)
             print(f"Verification email sent to {email}")
     except smtplib.SMTPAuthenticationError:
